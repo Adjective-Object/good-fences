@@ -51,6 +51,6 @@ export function setOptions(rawOptions: RawOptions) {
         sinceGitHash: rawOptions.sinceGitHash,
         looseRootFileDiscovery: rawOptions.looseRootFileDiscovery || false,
         maxConcurrentFenceJobs: rawOptions.maxConcurrentJobs || 6000,
-        progress: rawOptions.progress || false,
+        progress: rawOptions.progressBar || false,
     };
 }

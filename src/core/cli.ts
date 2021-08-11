@@ -20,22 +20,18 @@ async function main() {
             'Whether to ignore external fences (e.g. those from node_modules)'
         )
         .option(
-            '-c, --checkFiles <string...>',
-            'Specific fences and source files to check. If unspecified, all files in rootDir will be checked.'
-        )
-        .option(
             '-g, --sinceGitHash <string>',
-            'Infer files and fences to check based on changes since the last git hash'
+            'Infer files and fences to check based on changes since the specified git hash'
         )
         .option(
             '-l, --partialCheckLimit <number>',
             'Maximum files to check during a partial check run. If more files than this limit are changed, the partial check will be aborted and good-fences will exit with code 0.'
         )
         .option(
-            '-j, --maxConcurrentJobs <number>',
-            'Maximum concurrent fences to check. This should be set under the system rlimit, otherwise you will hit the mFILE error when we try to open too many files concurrently.'
+            '-j, --maxConcurrentFenceJobs',
+            'Maximum number of concurrent fence jobs to run. Default 6000'
         )
-        .option('-p, --progress', 'Show a progress bar while evaluating fences');
+        .option('-b, --progressBar', 'Show a progress bar while evaluating fences');
     program.parse(process.argv);
     const options = program.opts() as RawOptions;
 

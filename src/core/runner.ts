@@ -7,8 +7,8 @@ import { getResult, reportWarning } from './result';
 import { validateTagsExist } from '../validation/validateTagsExist';
 import { SourceFileProvider } from './SourceFileProvider';
 import { FDirSourceFileProvider } from './FdirSourceFileProvider';
-import { runWithConcurrentLimit } from '../utils/runWithConcurrentLimit';
 import NormalizedPath from '../types/NormalizedPath';
+import { runWithConcurrentLimit } from '../utils/runWithConcurrentLimit';
 import getConfigManager from '../utils/getConfigManager';
 import Options from '../types/Options';
 import { getFenceAndImportDiffsFromGit } from '../utils/getFenceAndImportDiffsFromGit';
@@ -30,7 +30,7 @@ async function getParitalCheck(): Promise<Options['partialCheck']> {
     return partialCheck;
 }
 
-async function getFilesNormalized(
+async function getSourceFilesNormalized(
     sourceFileProvider: SourceFileProvider,
     rootDirs?: string[]
 ): Promise<NormalizedPath[]> {
@@ -42,14 +42,9 @@ async function getFilesNormalized(
 export async function run(rawOptions: RawOptions) {
     // Store options so they can be globally available
     setOptions(rawOptions);
+    let options = getOptions();
 
     let partialCheck = await getParitalCheck();
-    if (partialCheck && partialCheck.fences.length == 0 && partialCheck.sourceFiles.length == 0) {
-        reportWarning('Skipping fence validation -- no fences or source files have changed');
-        return getResult();
-    }
-
-    let options = getOptions();
     if (options.partialCheckLimit) {
         if (!partialCheck) {
             reportWarning(
@@ -73,9 +68,13 @@ export async function run(rawOptions: RawOptions) {
         : new TypeScriptProgram(options.project);
 
     if (!partialCheck) {
-        getConfigManager().all;
         // validating tags exist requires a full load of all fences
-        // we can't do this in partial check mode
+        // we can't do this in partial check mode.
+        //
+        // Prefetching the full config set here avoids the overhead
+        // of partial fence loading, since we know we are loading
+        // the full fence set.
+        getConfigManager().getAllConfigs();
         validateTagsExist();
     } else {
         reportWarning(
@@ -86,7 +85,7 @@ export async function run(rawOptions: RawOptions) {
     if (partialCheck) {
         // validate only those files specified on the command line,
         // or included in the scope of changed fence files.
-        const fenceScopeFiles = await getFilesNormalized(
+        const fenceScopeFiles = await getSourceFilesNormalized(
             sourceFileProvider,
             partialCheck.fences.map(fencePath => path.dirname(fencePath))
         );
@@ -103,7 +102,7 @@ export async function run(rawOptions: RawOptions) {
             options.progress
         );
     } else {
-        const normalizedFiles = await getFilesNormalized(sourceFileProvider);
+        const normalizedFiles = await getSourceFilesNormalized(sourceFileProvider);
 
         // we have to limit the concurrent executed promises because
         // otherwise we will open all the files at the same time and

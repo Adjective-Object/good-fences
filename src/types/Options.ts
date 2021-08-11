@@ -17,7 +17,7 @@ export default interface Options {
     // Maximum number of fence validation jobs that can
     // be run at the same time.
     //
-    // this should be set under the system rlimit,
+    // This should be set under the system rlimit,
     // otherwise you will hit the MFILE error when
     // we try to open too many files concurrently.
     maxConcurrentFenceJobs: number;

@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
+import * as path from 'path';
 import NormalizedPath from '../types/NormalizedPath';
 import { SourceFileProvider } from './SourceFileProvider';
-import { readAndParseTsConfigFile } from './readAndParseTsConfigFile';
 
 // Helper class for interacting with TypeScript
 export default class TypeScriptProgram implements SourceFileProvider {
@@ -11,7 +11,9 @@ export default class TypeScriptProgram implements SourceFileProvider {
 
     constructor(configFile: NormalizedPath) {
         // Parse the config file
-        const parsedConfig = readAndParseTsConfigFile(configFile);
+        const config = readConfigFile(configFile);
+        const projectPath = path.dirname(configFile);
+        const parsedConfig = ts.parseJsonConfigFileContent(config, ts.sys, projectPath);
         this.compilerOptions = parsedConfig.options;
 
         // Create the program
@@ -49,4 +51,14 @@ export default class TypeScriptProgram implements SourceFileProvider {
 
         return resolvedFile.resolvedModule && resolvedFile.resolvedModule.resolvedFileName;
     }
+}
+
+function readConfigFile(configFile: NormalizedPath) {
+    const { config, error } = ts.readConfigFile(configFile, ts.sys.readFile);
+
+    if (error) {
+        throw new Error('Error reading project file: ' + error.messageText);
+    }
+
+    return config;
 }
